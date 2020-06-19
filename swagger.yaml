@@ -89,6 +89,15 @@ definitions:
         $ref: '#/definitions/Status'
     type: object
     x-go-package: github.com/kafkaesque-io/pulsar-beam/src/model
+  errorResponse:
+    properties:
+      Body:
+        $ref: '#/definitions/ResponseErr'
+    required:
+    - Body
+    type: object
+    x-go-name: errorResponse2
+    x-go-package: github.com/kafkaesque-io/pulsar-beam/src/docs
 info:
   description: Documentation of Pulsar Beam API.
   license:
@@ -97,21 +106,70 @@ info:
   title: Pulsar Beam
   version: 0.2.0
 paths:
-  /v1/firehose:
+  /v2/firehose/{persistent}/{tenant}/{namespace}/{topic}:
     post:
-      description: 'headers:'
       operationId: idOfFirehoseEndpoint
       responses:
-        "200": {}
+        "200":
+          description: successfully sent messages
         "401":
-          $ref: '#/responses/errorResponse'
+          description: authentication failure
+          schema:
+            $ref: '#/definitions/errorResponse'
+        "422":
+          description: invalid request parameters
+          schema:
+            $ref: '#/definitions/errorResponse'
         "500":
-          $ref: '#/responses/errorResponse'
+          description: failed to read the http body
+          schema:
+            $ref: '#/definitions/errorResponse'
         "503":
-          $ref: '#/responses/errorResponse'
+          description: failed to send messages to Pulsar
+          schema:
+            $ref: '#/definitions/errorResponse'
       summary: The endpoint receives a message in HTTP body that will be sent to Pulsar.
       tags:
-      - Event-Receiver
+      - Send-Messages
+  /v2/sse/{persistent}/{tenant}/{namespace}/{topic}:
+    get:
+      operationId: idOfHTTPSeverSentEvent
+      parameters:
+      - description: specify subscription initial position in either latest or earliest,
+          the default is latest
+        in: query
+        name: SubscriptionInitialPosition
+        type: string
+      - description: specify subscription type in exclusive, shared, keyshared, or
+          failover, the default is exclusive
+        in: query
+        name: SubscriptionType
+        type: string
+      - description: subscription name in minimum 5 charaters, a random subscription
+          will be generated if not specified
+        in: query
+        name: SubscriptionName
+        type: string
+      produces:
+      - text/event-stream
+      responses:
+        "200":
+          description: successfully subscribed to Pulsar
+        "401":
+          description: authentication failure
+          schema:
+            $ref: '#/definitions/errorResponse'
+        "422":
+          description: invalid request parameters
+          schema:
+            $ref: '#/definitions/errorResponse'
+        "500":
+          description: failed to subscribe or receive messages from Pulsar
+          schema:
+            $ref: '#/definitions/errorResponse'
+      summary: The endpoint receives a message in HTTP body that will be sent to Pulsar.
+      tags:
+      - SSE-Event-Streaming
   /v2/topic:
     delete:
       description: 'headers:'
@@ -127,7 +185,7 @@ paths:
           $ref: '#/responses/errorResponse'
         "500":
           $ref: '#/responses/errorResponse'
-      summary: Delete a topic based on topic name.
+      summary: Delete a topic configuration based on topic name.
       tags:
       - Delete-Topic
     get:
@@ -148,10 +206,12 @@ paths:
           $ref: '#/responses/errorResponse'
         "500":
           $ref: '#/responses/errorResponse'
-      summary: Get a topic based on topic name.
+      summary: Get a topic configuration based on the topic name.
       tags:
       - Get-Topic
     post:
+      description: Please do NOT specifiy key. The topic status must be for 1 for
+        activation.
       operationId: idOfUpdateTopic
       parameters:
       - in: body
@@ -161,15 +221,14 @@ paths:
       responses:
         "201":
           $ref: '#/responses/topicUpdateResponse'
-        "403":
-          $ref: '#/responses/errorResponse'
+        "403": {}
         "409":
           $ref: '#/responses/errorResponse'
         "422":
           $ref: '#/responses/errorResponse'
         "500":
           $ref: '#/responses/errorResponse'
-      summary: Create or update a topic.
+      summary: Create or update a topic configuration.
       tags:
       - Create-or-Update-Topic
   /v2/topic/{topicKey}:
@@ -192,9 +251,7 @@ paths:
           $ref: '#/responses/errorResponse'
         "500":
           $ref: '#/responses/errorResponse'
-      summary: |-
-        Delete a topic based on topic key.
-        Please do NOT specifiy key. The topic status must be for 1 for activation.
+      summary: Delete a topic configuration based on topic key.
       tags:
       - Delete-Topic
     get:
@@ -203,15 +260,14 @@ paths:
       responses:
         "200":
           $ref: '#/responses/topicGetResponse'
-        "403":
-          $ref: '#/responses/errorResponse'
+        "403": {}
         "404":
           $ref: '#/responses/errorResponse'
         "422":
           $ref: '#/responses/errorResponse'
         "500":
           $ref: '#/responses/errorResponse'
-      summary: Get a topic based on topic key.
+      summary: Get a topic configuration based on topic key.
       tags:
       - Get-Topic
 produces:

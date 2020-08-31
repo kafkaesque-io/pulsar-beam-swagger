@@ -131,6 +131,54 @@ paths:
       summary: The endpoint receives a message in HTTP body that will be sent to Pulsar.
       tags:
       - Send-Messages
+  /v2/poll/{persistent}/{tenant}/{namespace}/{topic}:
+    get:
+      operationId: idOfHTTPLongPolling
+      parameters:
+      - description: specify subscription type in exclusive, shared, keyshared, or
+          failover, the default is exclusive
+        in: query
+        name: SubscriptionType
+        type: string
+      - description: subscription name in minimum 5 charaters, a random subscription
+          will be generated if not specified
+        in: query
+        name: SubscriptionName
+        type: string
+      - description: the batch size of the message list. The poll responds to the
+          client When the batch size is reached. The default is 10 messages
+        in: query
+        name: batchSize
+        type: integer
+      - description: Per message time out in milliseconds to wait the message from
+          the Pulsar topic. The default is 300 millisecond
+        in: query
+        name: perMessageTimeoutMs
+        type: integer
+      produces:
+      - text/event-poll
+      responses:
+        "200":
+          description: successfully subscribed and received messages from a Pulsar
+            topic
+        "204":
+          description: successfully subscribed to a Pulsar topic but receives no messages
+        "401":
+          description: authentication failure
+          schema:
+            $ref: '#/definitions/errorResponse'
+        "422":
+          description: invalid request parameters
+          schema:
+            $ref: '#/definitions/errorResponse'
+        "500":
+          description: failed to subscribe or receive messages from Pulsar
+          schema:
+            $ref: '#/definitions/errorResponse'
+      summary: The long polling endpoint receives messages in HTTP body from a Pulsar
+        topic.
+      tags:
+      - Long-Polling
   /v2/sse/{persistent}/{tenant}/{namespace}/{topic}:
     get:
       operationId: idOfHTTPSeverSentEvent
@@ -153,8 +201,6 @@ paths:
       produces:
       - text/event-stream
       responses:
-        "200":
-          description: successfully subscribed to Pulsar
         "401":
           description: authentication failure
           schema:
@@ -167,7 +213,8 @@ paths:
           description: failed to subscribe or receive messages from Pulsar
           schema:
             $ref: '#/definitions/errorResponse'
-      summary: The endpoint receives a message in HTTP body that will be sent to Pulsar.
+      summary: The HTTP SSE endpoint receives messages in HTTP body from a Pulsar
+        topic.
       tags:
       - SSE-Event-Streaming
   /v2/topic:
